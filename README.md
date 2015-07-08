@@ -1,0 +1,146 @@
+
+Note: I ran the source file (logfind.py) through pep8, and it threw warnings 
+at a few places of the file where I exceeded the recommended
+column width of 79 characters. I have left these lines untouched in the interest
+of maintaining the readability of the variable and function names. 
+
+This python script is an attempt to simulate one of the more popular
+commands found on Linux systems, namely, grep.
+
+To run this program, follow the syntax below:
+
+logfind symbol look
+
+where "symbol" and "look" are keywords that you want to look up in a set
+of files chosen from the current according to the regular expression
+specified in a file named .logfind.
+
+*Important* The program REQUIRES that you create the above mentioned file,
+.logfind, and ensure that that it is located in the same directory as the
+logfind.py file.
+
+The .logfind file should contain ONLY a list of regular expressions, each
+listed line by line. Nothing more. A given regular expression will specify
+what sort of files from the current working directory should constitute
+the "search space".
+
+Here's the right way to specify regular expressions in .logfind:
+
+[a-zA-Z0-9\-\_\.]*\.[a-zA-Z~]*
+[a-zA-Z0-9\-\_\.]*\.py
+[a-zA-Z0-9\-\_\.]*\.txt
+
+The first expression specifies the program to look for keyword arguments in
+files of any format in the current working directory.
+
+The second and third expressions specifies the program to look for keyword
+arguments in .py files and .txt files respectively.
+
+Feel free to specify other regular expressions as well. 
+
+Instructions to install the logfind package and run the logfind as 
+an execuatable:
+
+*Important* 
+
+1) Before you proceed with the setup, please make sure that you 
+have the pyinstaller package installed.
+
+2) I am also assuming that you are running this on a Linux system, because
+the instructions below are specifically meant for it. I have not
+tested this on a non-Windows machine, so you're on your own if you're 
+not using Linux.
+
+3) Copy the contents of the Logfind repo to one of your local directories. 
+Do NOT meddle with directory structure of the logfind folder.
+
+(I) To generate the executable, make sure you are in the logfind folder which
+contains __init__.py and logfind.py:
+
+i.e., the path in the command looks like this: .../logfind/logfind$
+
+Run the following command:
+
+.../Logfind/logfind$ pyinstaller logfind.py
+
+This will generate two folders, namely, build and dist in the current directory
+
+Type in the following command:
+
+.../Logfind/logind$ cd dist/logfind
+
+You'll notice the following prompt:
+
+.../Logfind/logfind/dist/logfind$
+
+Now you'll have to copy the contents (.so files and the logfind executable) 
+of the current folder into /usr/local/bin
+
+To do this, type the following:
+
+.../Logfind/logfind/dist/logfind$ sudo cp * /usr/local/bin
+
+Now you can run 'logfind' from any directory as follows, provided you've
+also created a .logfind file as previously described:
+
+For instance:
+
+linuxuser@5glinux-desktop:~/Desktop/samples$ logfind abc def 123
+
+II) To install logfind as a package, do the following:
+
+Make sure you're in the following location:
+
+.../Logfind$ 
+
+You have access to setup.py file when you're here.
+
+Run the following command to install logfind as a package:
+
+.../Logfind$ sudo python setup.py install
+
+
+Usage:
+
+logfind [-o] KEYWORD1 KEYWORD2 KEYWORD3...	
+
+where '-o' is optional.
+
+Use '-o' if you want to search one or more KEYWORDS in any file from a
+list of files specified by reg expressions in .logfind.
+
+Omit '-o' if you want to search for ALL the KEYWORDS in any file from a
+list of files specified by reg expressions in .logfind. 
+
+For e.g., 
+
+let's assume that the current working directory I am running the program
+from contains an assortment of file types. I, however, choose to limit the
+search space to txt files alone by specifying the [a-zA-Z0-9\-\_\.]*\.txt
+pattern in .logfind
+
+And I key in the following command:
+
+python logfind.py -o abc def 123
+
+Since I have limited the search space to text files alone, this command will 
+look for the presence of the strings 'abc', 'def', '123' in each txt file.
+
+Suppose 'abc' is found in 'alphabets.txt', then this will be reported as follows:
+
+abc was found in /home/ashwin/alphabets.txt
+
+If none of the strings are found in ANY of the txt files, then a "no match found"
+message is displayed.
+
+Let's consider another example where the '-o' is omitted, but we use the same
+search space (which is, txt files in the present working directory):
+
+python logfind.py abc def 123
+
+This will pull out a file IF and ONLY IF ALL the three keywords are contained 
+in that file.
+
+The output would be:
+
+['abc', 'def', '123'] found in /home/ashwin/alphabets_and_digits.txt
