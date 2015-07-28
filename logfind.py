@@ -1,173 +1,149 @@
 #!/usr/bin/env python
 from sys import argv, exit
-import os
+from os.path import expanduser, isfile, join
+from os import listdir
 import sys
 import re
+import os
 
 
-def extract_arguments_from_command_line():
+def is_empty(list_of_arguments):
     """
-    This will extract all the arugments (typically strings) input by the
-    user, and return these arguments in the form of a list. The function
-    does not take in any arguments.
-    """
-    return sys.argv[1:]
-
-
-def determine_if_list_of_arguments_is_empty(list_of_arguments):
-    """
-    This argument determines whether keyword(s) is(are) input by the user
-    in the command line. If no keyword is found, then a msg is displayed.
-    If there's one or more keywords to search for, execution of the rest
-    of the program resumes.
+    This function checks for the absence of arguments (keywords) in the
+    command line
     """
     if len(list_of_arguments) == 0:
-        print """You have not input any keyword to search for. The program
-will close now"""
+        print """No keywords to search for"""
         exit(0)
     else:
         return
 
 
-def is_o_present_in_command_line(list_of_arguments):
+def get_match_type(arguments):
     """
-    This takes in a list of arguments input by the user, and determines if
-    '-o' is one of the arguments. The function returns a boolean value.
+    This function checks for the type of match operation to be performed.
+    It returns either an 'AND' or an 'OR'
     """
-    if list_of_arguments[0] == '-o':
-        return True
+    if arguments[0] == '-o':
+        return "OR"
     else:
-        return False
+        return "AND"
 
 
-def extract_regexprs_from_dot_logfind_file(dotfile_path):
+def get_search_space():
     """
-    This function reads the contents of the .logfind file, extracts the
-    regular expressions specified (by the user), and returns these in the
-    form of a list.
+    This function reads the contents of .logfind (found in home directory,
+    and returns lists of directories and their corresponding search patterns.
     """
-    dotfile_object = open(dotfile_path)
-    lines = dotfile_object.readlines()
-    list_of_regexprs = map(lambda s: s.strip(), lines)
-    dotfile_object.close()
-    return list_of_regexprs
+    directories, patterns = [], []
+    file_obj = open(expanduser("~") + "/.logfind")
+    lines = file_obj.readlines()
+    paths = map(lambda s: s.strip(), lines)
+    for path in paths:
+        l = path.split('/')
+        patterns.append(l[-1])
+        del l[0], l[-1]
+        directories.append('/' + '/'.join(l))
+    file_obj.close()
+    return directories, patterns
 
 
-def obtain_list_of_files_in_directory():
+def get_files(path):
     """
-    This function builds a list of all files (files ONLY)
-    in the current working directory and returns them.
+    This function returns a list of all files found in 'path'
     """
-    list_of_all_directories_and_files = os.listdir(os.getcwd())
-    list_of_files_in_directory = [f for f in list_of_all_directories_and_files
-                                  if os.path.isfile(os.getcwd() + '/' + f)]
-    return list_of_files_in_directory
+    onlyfiles = [f for f in listdir(path) if isfile(join(path, f))]
+    return onlyfiles
 
 
-def obtain_list_of_file_paths_matching_regexpr(regexpr):
+def get_files_matching_pattern(path, pattern):
     """
-    Given a regular expression (obtained from .logfind) as input, this
-    function will return a list of files (specified by their complete set
-    of paths) based entirely on the regular expression.
+    Given a directory path and pattern, this function return a list
+    of files that match 'pattern'
     """
-    string_of_file_names = ' '.join(obtain_list_of_files_in_directory())
-    files_matching_regexpr = re.findall(regexpr, string_of_file_names)
-    list_of_file_paths_matching_regexpr = [os.getcwd() + '/' + filename
-                                           for filename in
-                                           files_matching_regexpr
-                                           if os.path.isfile(os.getcwd() + '/' + filename)]
+    file_names = ' '.join(get_files(path))
+    files_matching_pattern = re.findall(pattern, file_names)
+    files_matching_pattern = [path + '/' + filename
+                              for filename in
+                              files_matching_pattern
+                              if os.path.isfile(path + '/' + filename)]
 
-    print "When the search space is set by the", regexpr, "pattern: ", "\n"
-    return list_of_file_paths_matching_regexpr
+    print "When the search space is set by", path + '/' + pattern, "\n"
+
+    return files_matching_pattern
 
 
-def match_when_o_is_present_in_command_line(list_of_files_matching_regexpr,
-                                            list_of_arguments):
+def match_OR(paths, patterns, arguments):
     """
-    This function takes in two arguments: first, a list of files
-    that matches a particular reg expr; second, a list of command line
-    arguments which will be "looked for" in the contents of the set of
-    above-mentioned list of files. The 'o' dicates that a match is made when
-    if one or more of the arguments is found in a given file.
-
-    When a successful match is made, the argument is reported to have
-    been found in a given file.
-
-    When a match is unsuccessful (i.e., when none of the list of arguments
-    are found in any of the files), the message "no match found" is displayed.
+    For a given search space (a list of files specified together
+    by path and pattern) this function will report a match if one
+    or more of the arguments are present in a single files. Mutliple
+    matches are listed line by line
     """
     match = 0
-    for path in list_of_files_matching_regexpr:
 
-        file_object = open(path)
-        content = file_object.read()
+    for path, pattern in zip(paths, patterns):
 
-        for arg in list_of_arguments[1:]:
-            if arg in content:
-                match = 1
-                print arg, "was found in", path, "\n"
+        for file in get_files_matching_pattern(path, pattern):
 
-        file_object.close()
+            file_object = open(file)
+            content = file_object.read()
 
-    if match != 1:
-        print "No match found."
+            for arg in arguments[1:]:
+                if arg in content:
+                    match = 1
+                    print arg, "was found in", file, "\n"
+
+            file_object.close()
+
+        if match != 1:
+            print "No match found."
 
 
-def match_when_o_is_absent_from_command_line(list_of_files_matching_regexpr,
-                                             list_of_arguments):
+def match_AND(paths, patterns, arguments):
     """
-    This function takes in two arguments: first, a list of files
-    that match a particular reg expr; second, a list of command line
-    arguments which will be "looked for" in the the contents of the set of
-    above-mentioned list of files. The *absence* of 'o' in the command line
-    argument dictates that a match is made IF and ONLY IF ALL of the arguments
-    are found in a given file.
-
-    When a successful match is made, the argument(s) is(are) reported to have
-    been found in a given file.
-
-    When a match is unsuccessful (i.e., if even one among the list of
-    arguments is NOT found in any of the files), the message "no match found"
-    is displayed.
+    For a given search space (a list of files specified together
+    by path and pattern) this function will report a match if and only
+    if all the arguments are present in a file
     """
-    for path in list_of_files_matching_regexpr:
 
-        file_object = open(path)
-        content = file_object.read()
-        matches = []
+    for path, pattern in zip(paths, patterns):
 
-        for arg in list_of_arguments:
-            if arg in content:
-                match = 1
-                matches.append(arg)
-            else:
-                match = 0
-                break
+        for file in get_files_matching_pattern(path, pattern):
 
-        if match == 1:
-            print matches, "found in", path, "\n"
+            file_object = open(file)
+            content = file_object.read()
+            matches = []
 
-        file_object.close()
+            for arg in arguments:
+                if arg in content:
+                    match = 1
+                    matches.append(arg)
+                else:
+                    match = 0
+                    break
+
+            if match == 1:
+                print matches, "found in", file, "\n"
+
+            file_object.close()
+
+
+def match(match_type, paths, patterns, arguments):
+    """
+    This is a wrapper function which calls either 'match_OR' or
+    'match_AND' depending on the value of 'match_type'
+    """
+
+    if match_type == "OR":
+        match_OR(paths, patterns, arguments)
+    elif match_type == "AND":
+        match_AND(paths, patterns, arguments)
+
 
 if __name__ == '__main__':
 
-    if '.logfind' not in obtain_list_of_files_in_directory():
-        print """Make sure you include the .logfind file in your current working directory. Also
-specify one or more regular expressions in this file in the manner instructed in the README"""
-
-    else:
-        list_of_regexprs = extract_regexprs_from_dot_logfind_file(".logfind")
-
-        list_of_arguments = extract_arguments_from_command_line()
-
-        determine_if_list_of_arguments_is_empty(list_of_arguments)
-
-        for regexpr in list_of_regexprs:
-
-            list_of_files_matching_regexpr = obtain_list_of_file_paths_matching_regexpr(regexpr)
-
-            if is_o_present_in_command_line(list_of_arguments):
-                match_when_o_is_present_in_command_line(list_of_files_matching_regexpr,
-                                                        list_of_arguments)
-            else:
-                match_when_o_is_absent_from_command_line(list_of_files_matching_regexpr, list_of_arguments)
+    arguments = sys.argv[1:]
+    is_empty(arguments)
+    paths, patterns = get_search_space()
+    match(get_match_type(arguments), paths, patterns, arguments)
