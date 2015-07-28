@@ -1,9 +1,4 @@
 
-Note: I ran the source file (logfind.py) through pep8, and it threw warnings 
-at a few places of the file where I exceeded the recommended
-column width of 79 characters. I have left these lines untouched in the interest
-of maintaining the readability of the variable and function names. 
-
 This python script is an attempt to simulate one of the more popular
 commands found on Linux systems, namely, grep.
 
@@ -16,8 +11,7 @@ of files chosen from the current according to the regular expression
 specified in a file named .logfind.
 
 *Important* The program REQUIRES that you create the above mentioned file,
-.logfind, and ensure that that it is located in the same directory as the
-logfind.py file.
+.logfind, in your HOME directory.
 
 The .logfind file should contain ONLY a list of regular expressions, each
 listed line by line. Nothing more. A given regular expression will specify
