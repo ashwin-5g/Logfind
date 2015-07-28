@@ -1,4 +1,3 @@
-
 This python script is an attempt to simulate one of the more popular
 commands found on Linux systems, namely, grep.
 
@@ -13,16 +12,16 @@ specified in a file named .logfind.
 *Important* The program REQUIRES that you create the above mentioned file,
 .logfind, in your HOME directory.
 
-The .logfind file should contain ONLY a list of regular expressions, each
-listed line by line. Nothing more. A given regular expression will specify
-what sort of files from the current working directory should constitute
-the "search space".
+The .logfind file should contain ONLY a list directory paths followed by 
+a regular expression at the end, each listed line by line. A given regular 
+expression will specify what sort of files from the specified path should 
+constitute the "search space".
 
-Here's the right way to specify regular expressions in .logfind:
+Here's how you specify regular expressions in .logfind:
 
-[a-zA-Z0-9\-\_\.]*\.[a-zA-Z~]*
-[a-zA-Z0-9\-\_\.]*\.py
-[a-zA-Z0-9\-\_\.]*\.txt
+/home/linuxuser/Documents/[a-zA-Z0-9\-\_\.]*\.[a-zA-Z~]*
+/home/linuxuser/Desktop/[a-zA-Z0-9\-\_\.]*\.py
+/home/linuxuser/Desktop/samples/[a-zA-Z0-9\-\_\.]*\.txt
 
 The first expression specifies the program to look for keyword arguments in
 files of any format in the current working directory.
